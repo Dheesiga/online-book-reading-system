@@ -1,0 +1,2474 @@
+SYSTEM IMPLEMENTATION
+I.	TABLE CREATION AND QUERIES:
+•	Table creation for table author:
+create table author ( a_id char(5) primary key,
+		          ISBN double,
+		          foreign key (ISBN) references book(ISBN),
+		          a_name varchar(50),
+		          amail varchar(30));
+•	Table creation for table book:
+create table book (ISBN double primary key,
+		      b_name varchar(100),
+		      language varchar(20),
+		      genre varchar(20),
+		      description varchar(1000),
+		      rating double);		
+•	Table creation for table fb:
+create table fb(b_name varchar(50), 
+feedback varchar(100));
+
+•	Table creation for table login:
+create table login (log_id char(8) primary key,
+		      name varchar(20),
+		      password varchar(10),
+		      validity date); 
+•	Table creation for table publisher:
+create table publisher( p_id char(5) primary key,
+		          ISBN double,
+		          foreign key (ISBN) references book(ISBN),
+		          p_name varchar(50),
+		          pmail varchar(30));
+
+II.	INTEGRATION OF TABLES AND FRONT END:
+//Bookdemo.java
+package bookdemo;
+import java.util.*;
+import java.sql.*;
+public class Bookdemo {
+static final String DB_URL = "jdbc:mysql://localhost:3306/books";
+static final String USER = "root";
+static final String PASS = "Shakthii@17";
+public static void main(String[] args) {
+Connection conn = null;
+Statement stmt = null;
+try{
+Class.forName("com.mysql.jdbc.Driver");
+System.out.println("Connecting to database...");
+conn = DriverManager.getConnection(DB_URL,USER,PASS);
+stmt = conn.createStatement();
+Scanner s = new Scanner(System.in);
+for(;;){
+System.out.println("Click 1 to sign-in 2 to login 3 for admin login 4 to logout:");
+int bu=s.nextInt();
+if(bu==1){
+System.out.println("Signin:");
+System.out.println("Enter name:");
+String n=s.next();
+System.out.println("Enter user name:");
+String u=s.next();
+System.out.println("Enter password:");
+String p=s.next();
+System.out.println("Do you want membership? press 1 if needed");
+int m=s.nextInt();
+if(m==1){
+System.out.println("Select your membership validity:\n3 months-Rs.99(1)\n6 months-Rs.170(2)\n1 year-Rs.300(3)");
+int ms=s.nextInt();
+int v=0;
+if (ms==1)
+v=3;
+else if(ms==2)
+v=6;
+else if(ms==3)
+v=12;
+else
+System.out.println("Need membership to access");
+PreparedStatement query = conn.prepareStatement("insert into login(log_id,name,password)values(?,?,?);");
+query.setString(1, u);
+query.setString(2, n);
+query.setString(3, p);
+query.executeUpdate();
+PreparedStatement query1 = conn.prepareStatement("update login set validity=adddate(curdate(),"
++ "interval ? month) where name=?");
+query1.setInt(1,v);
+query1.setString(2, n);
+query1.executeUpdate();
+PreparedStatement query2 = conn.prepareStatement("select adddate(curdate(), interval ? month) as date");
+query2.setInt(1,v);
+ResultSet sr=query2.executeQuery();
+while(sr.next())
+System .out.println("Your membership is valid till "+sr.getDate("date"));
+}
+else{
+System.out.println("Need membership to access");
+PreparedStatement query1=conn.prepareStatement("delete from login where log_id=?");
+query1.setString(1,u);
+query1.executeUpdate();
+}
+}
+else if(bu==3){
+System.out.println("login:");
+System.out.println("Enter user name:");
+String u=s.next();
+System.out.println("Enter password:");
+String p=s.next();
+PreparedStatement query = conn.prepareStatement("Select password from login where log_id=?");
+query.setString(1, u);
+ResultSet rs1 = query.executeQuery();
+String passcheck = new String();
+while (rs1.next()) {
+passcheck = rs1.getString(1);
+}
+if (p.equals(passcheck)){
+System.out.println("Press 1 to insert, 2 to delete:");
+int q=s.nextInt();
+if(q==1){
+System.out.println("Enter book details");
+System.out.println("Enter ISBN number:");
+Double i=s.nextDouble();
+System.out.println("Enter book name:");
+String b=s.next();
+System.out.println("Enter book language:");
+String l=s.next();
+System.out.println("Enter book genre:");
+String g=s.next();
+System.out.println("Enter book description:");
+String d=s.nextLine();
+System.out.println("Enter rating:");
+Double r=s.nextDouble();
+PreparedStatement query1=conn.prepareStatement("insert into book values(?,?,?,?,?,?);");
+query1.setDouble(1,i);
+query1.setString(2,b);
+query1.setString(3,l);
+query1.setString(4,g);
+query1.setString(5,d);
+query1.setDouble(6,r);
+query1.executeUpdate();
+System.out.println("Enter Author details");
+System.out.println("Enter author id:");
+String aid=s.next();
+System.out.println("Enter author name:");
+String an=s.next();
+System.out.println("Enter author mail:");
+String am=s.next();
+PreparedStatement query2=conn.prepareStatement("insert into author values(?,?,?,?);");
+query2.setString(1,aid);
+query2.setDouble(2,i);
+query2.setString(3,an);
+query2.setString(4,am);
+query2.executeUpdate();
+System.out.println("Enter Publisher details");
+System.out.println("Enter publisher id:");
+String pid=s.next();
+System.out.println("Enter publisher name:");
+String pn=s.next();
+System.out.println("Enter publisher mail:");
+String pm=s.next();
+PreparedStatement query3=conn.prepareStatement("insert into publisher values(?,?,?,?);");
+query3.setString(1,pid);
+query3.setDouble(2,i);
+query3.setString(3,pn);
+query3.setString(4,pm);
+query3.executeUpdate();
+System.out.println("Inserted success fully");
+}
+else{
+System.out.println("Enter ISBN:");
+Double i=s.nextDouble();
+PreparedStatement query1=conn.prepareStatement("delete from author where ISBN=?");
+query1.setDouble(1,i);
+query1.executeUpdate();
+PreparedStatement query2=conn.prepareStatement("delete from publisher where ISBN=?");
+query2.setDouble(1,i);
+query2.executeUpdate();
+PreparedStatement query3=conn.prepareStatement("delete from book where ISBN=?");
+query3.setDouble(1,i);
+query3.executeUpdate();
+System.out.println("Deleted success fully");
+}
+}
+else{
+System.out.println("Enter correct password");
+}
+}
+else if(bu==2){
+System.out.println("login:");
+System.out.println("Enter user name:");
+String u=s.next();
+System.out.println("Enter password:");
+String p=s.next();
+PreparedStatement query = conn.prepareStatement("Select password from login where log_id=?");
+query.setString(1, u);
+PreparedStatement sql = conn.prepareStatement("Select datediff(validity,curdate()) as d from login where log_id=?");
+sql.setString(1, u);
+ResultSet rs1 = query.executeQuery();
+String passcheck = new String();
+int ex=0;
+while (rs1.next()) {
+passcheck = rs1.getString(1);
+}
+if (p.equals(passcheck)){
+ResultSet rs2 = sql.executeQuery();
+while(rs2.next()){
+ex=rs2.getInt(1);
+}
+if(ex>0){
+System.out.println("Your membership is valid for "+ex+" more days");
+System.out.println("login successful");
+System.out.println("Search a book.....");
+String b=s.next();
+PreparedStatement mysql = conn.prepareStatement("select exists(select * from book natural join author natural join "
+        + "publisher where b_name regexp ?) as c");
+mysql.setString(1, b);
+ResultSet r = mysql.executeQuery();
+int q=0;
+while(r.next()){
+q=r.getInt("c");
+}
+if(q==1){
+PreparedStatement sql1 = conn.prepareStatement("SELECT * from book natural join author natural join publisher "
++ "where b_name regexp ?"); 
+sql1.setString(1,b);
+ResultSet rs = sql1.executeQuery();
+while(rs.next()){
+double ISBN=rs.getDouble("ISBN");
+String b_name=rs.getString("b_name");
+String language=rs.getString("language");
+String genre=rs.getString("genre");
+String description=rs.getString("description");
+Double rating=rs.getDouble("rating");
+String a_name=rs.getString("a_name");
+String a_id=rs.getString("a_id");
+String a_email=rs.getString("amail");
+String p_name=rs.getString("p_name");
+String p_id=rs.getString("p_id");
+String p_email=rs.getString("pmail");
+System.out.println("ISBN: " + ISBN);
+System.out.println("Book name: " + b_name);
+System.out.println("language: "+language);
+System.out.println("genre: "+genre);
+System.out.println("Description: "+description);
+System.out.println("rating: "+rating);
+System.out.println("Author: "+a_name);
+System.out.println("Publisher: "+p_name);
+System.out.println("\nCan tou give your feedback?(press 1 if read)");
+int x= s.nextInt();
+if(x==1){
+System.out.println("Enter your feedback: ");
+s.nextLine();
+String y=s.nextLine();
+PreparedStatement query1=conn.prepareStatement("insert into fb values(?,?);");
+query1.setString(1,b_name);
+query1.setString(2,y);
+query1.executeUpdate();
+System.out.println("Thankyou for your feedback");
+}
+else{
+System.out.println("Enjoy reading....");
+}
+}
+rs.close();
+}
+else{
+System.out.println("book not found");
+}
+}
+else{
+System.out.println("your member ship is expired and your account is deleted.... kindly signin again");
+PreparedStatement query1=conn.prepareStatement("delete from login where log_id=?");
+query1.setString(1,u);
+query1.executeUpdate();
+}
+}
+else
+System.out.println("your user name or password is incorrect");
+}
+else{
+    break;
+}
+}
+stmt.close();
+conn.close();
+}catch(SQLException se){
+se.printStackTrace();
+}catch(Exception e){
+e.printStackTrace();
+}finally{
+try{
+if(stmt!=null)
+stmt.close();
+}catch(SQLException se2){
+}
+try{
+if(conn!=null)
+conn.close();
+}catch(SQLException se){
+se.printStackTrace();
+}
+}
+System.out.println("See you soon!");
+}
+}
+ 
+//index.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ *
+ * @author DG
+ */
+public class index extends javax.swing.JFrame {
+
+    /**
+     * Creates new form index
+     */
+    public index() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jPanel1 = new javax.swing.JPanel();
+        user = new javax.swing.JButton();
+        admin = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        user.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        user.setText("USER");
+        user.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                userActionPerformed(evt);
+            }
+        });
+
+        admin.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        admin.setText("ADMIN");
+        admin.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                adminActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(90, 90, 90)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(admin)
+                    .addComponent(user))
+                .addContainerGap(119, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(28, 28, 28)
+                .addComponent(user)
+                .addGap(36, 36, 36)
+                .addComponent(admin)
+                .addContainerGap(42, Short.MAX_VALUE))
+        );
+
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 210, 320, 180));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0052.jpg")); // NOI18N
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void userActionPerformed(java.awt.event.ActionEvent evt) {                                     
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            userpg ob=new userpg();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(index.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                    
+
+    private void adminActionPerformed(java.awt.event.ActionEvent evt) {                                      
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            adminlogin ob=new adminlogin();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(index.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                     
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(index.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(index.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(index.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(index.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new index().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton admin;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JButton user;
+    // End of variables declaration                   
+}
+//adminlogin
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.swing.JOptionPane;
+
+/**
+ *
+ * @author DG
+ */
+public class adminlogin extends javax.swing.JFrame {
+
+    /**
+     * Creates new form adminlogin
+     */
+    public adminlogin() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jPanel2 = new javax.swing.JPanel();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        user = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        pass = new javax.swing.JPasswordField();
+        jButton1 = new javax.swing.JButton();
+        jPanel1 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel2.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel2.setText("ADMIN LOGIN");
+
+        jLabel3.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel3.setText("USERNAME");
+
+        user.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        user.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                userActionPerformed(evt);
+            }
+        });
+
+        jLabel4.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel4.setText("PASSWORD");
+
+        pass.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        pass.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                passActionPerformed(evt);
+            }
+        });
+
+        jButton1.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jButton1.setText("LOGIN");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel2)
+                .addGap(117, 117, 117))
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(24, 24, 24)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(jLabel4)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 53, Short.MAX_VALUE)
+                        .addComponent(pass, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(jLabel3)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(user, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(33, 33, 33))
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(138, 138, 138)
+                .addComponent(jButton1)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(29, 29, 29)
+                .addComponent(jLabel2)
+                .addGap(32, 32, 32)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel3)
+                    .addComponent(user, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(28, 28, 28)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel4)
+                    .addComponent(pass, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(38, 38, 38)
+                .addComponent(jButton1)
+                .addContainerGap(28, Short.MAX_VALUE))
+        );
+
+        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 180, 420, 280));
+
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0045.jpg")); // NOI18N
+        jLabel1.setText("jLabel1");
+        jLabel1.setMinimumSize(new java.awt.Dimension(1366, 768));
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void userActionPerformed(java.awt.event.ActionEvent evt) {                                     
+        // TODO add your handling code here:
+    }                                    
+
+    private void passActionPerformed(java.awt.event.ActionEvent evt) {                                     
+        // TODO add your handling code here:
+    }                                    
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            String u=user.getText();
+            String p=pass.getText();
+            if(u.equals("admin")){
+            PreparedStatement query = conn.prepareStatement("select* from login where log_id='" +u+"' and password='"+p+"'");
+            ResultSet rs = query.executeQuery();
+            if(rs.next())
+            {
+                dispose();
+                admin1 ob=new admin1();
+                ob.setVisible(true);
+                this.setVisible(false);
+            }
+            else{
+                JOptionPane.showMessageDialog(this,"INVALID PASSWORD!");
+                
+            }
+            }
+            else{
+                JOptionPane.showMessageDialog(this,"INVALID USERNAME!");
+            }
+            conn.close();
+        } catch (SQLException ex) {
+            java.util.logging.Logger.getLogger(adminlogin.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(adminlogin.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(adminlogin.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(adminlogin.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(adminlogin.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new adminlogin().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton jButton1;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPasswordField pass;
+    private javax.swing.JTextField user;
+    // End of variables declaration                   
+}
+//admin1.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+/**
+ *
+ * @author DG
+ */
+public class admin1 extends javax.swing.JFrame {
+
+    /**
+     * Creates new form admin1
+     */
+    public admin1() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jPanel2 = new javax.swing.JPanel();
+        jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
+        jPanel1 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jButton1.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jButton1.setText("INSERT");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
+        jButton2.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jButton2.setText("DELETE");
+        jButton2.setAutoscrolls(true);
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
+        jButton3.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jButton3.setText("LOGOUT");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(20, 20, 20)
+                .addComponent(jButton1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 58, Short.MAX_VALUE)
+                .addComponent(jButton2)
+                .addGap(24, 24, 24))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jButton3)
+                .addGap(102, 102, 102))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(31, 31, 31)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton1)
+                    .addComponent(jButton2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 52, Short.MAX_VALUE)
+                .addComponent(jButton3)
+                .addGap(43, 43, 43))
+        );
+
+        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(110, 90, 350, 200));
+
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0055.jpg")); // NOI18N
+        jLabel1.setText("jLabel1");
+        jLabel1.setMinimumSize(new java.awt.Dimension(1366, 768));
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            insertb ob=new insertb();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(admin1.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            deleteb ob=new deleteb();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(admin1.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            index ob=new index();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(admin1.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(admin1.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(admin1.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(admin1.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(admin1.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new admin1().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    // End of variables declaration                   
+}
+//insert.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ *
+ * @author DG
+ */
+public class index extends javax.swing.JFrame {
+
+    /**
+     * Creates new form index
+     */
+    public index() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jPanel1 = new javax.swing.JPanel();
+        user = new javax.swing.JButton();
+        admin = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        user.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        user.setText("USER");
+        user.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                userActionPerformed(evt);
+            }
+        });
+
+        admin.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        admin.setText("ADMIN");
+        admin.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                adminActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(90, 90, 90)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(admin)
+                    .addComponent(user))
+                .addContainerGap(119, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(28, 28, 28)
+                .addComponent(user)
+                .addGap(36, 36, 36)
+                .addComponent(admin)
+                .addContainerGap(42, Short.MAX_VALUE))
+        );
+
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 210, 320, 180));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0052.jpg")); // NOI18N
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void userActionPerformed(java.awt.event.ActionEvent evt) {                                     
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            userpg ob=new userpg();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(index.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                    
+
+    private void adminActionPerformed(java.awt.event.ActionEvent evt) {                                      
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            adminlogin ob=new adminlogin();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(index.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                     
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(index.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(index.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(index.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(index.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new index().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton admin;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JButton user;
+    // End of variables declaration                   
+}
+//delete.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+/**
+ *
+ * @author DG
+ */
+public class deleteb extends javax.swing.JFrame {
+
+    /**
+     * Creates new form deleteb
+     */
+    public deleteb() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jPanel2 = new javax.swing.JPanel();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+        jPanel1 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel2.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel2.setText("DELETE");
+
+        jLabel3.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel3.setText("ISBN");
+
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
+
+        jButton1.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jButton1.setText("DELETE");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
+        jButton2.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        jButton2.setText("BACK");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(32, 32, 32)
+                .addComponent(jLabel3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 76, Short.MAX_VALUE)
+                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 135, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(40, 40, 40))
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(113, 113, 113)
+                        .addComponent(jLabel2))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(99, 99, 99)
+                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(124, 124, 124)
+                        .addComponent(jButton2)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(30, 30, 30)
+                .addComponent(jLabel2)
+                .addGap(18, 18, 18)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel3)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(39, 39, 39)
+                .addComponent(jButton1)
+                .addGap(18, 18, 18)
+                .addComponent(jButton2)
+                .addContainerGap(21, Short.MAX_VALUE))
+        );
+
+        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(590, 230, 340, 250));
+
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0047.jpg")); // NOI18N
+        jLabel1.setText("jLabel1");
+        jLabel1.setMinimumSize(new java.awt.Dimension(1366, 768));
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {                                            
+        // TODO add your handling code here:
+    }                                           
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            Double i=Double.parseDouble(jTextField1.getText());
+            PreparedStatement query1=conn.prepareStatement("delete from author where ISBN=?");
+            query1.setDouble(1,i);
+            query1.executeUpdate();
+            PreparedStatement query2=conn.prepareStatement("delete from publisher where ISBN=?");
+            query2.setDouble(1,i);
+            query2.executeUpdate();
+            PreparedStatement query3=conn.prepareStatement("delete from book where ISBN=?");
+            query3.setDouble(1,i);
+            query3.executeUpdate();
+            JOptionPane.showMessageDialog(this,"DELETED SUCCESSFULLY");
+            admin1 ob=new admin1();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(deleteb.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            admin1 ob=new admin1();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(deleteb.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(deleteb.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(deleteb.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(deleteb.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(deleteb.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new deleteb().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JTextField jTextField1;
+    // End of variables declaration                   
+}
+//userpg.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+/**
+ *
+ * @author DG
+ */
+public class userpg extends javax.swing.JFrame {
+
+    /**
+     * Creates new form userpg
+     */
+    public userpg() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jPanel1 = new javax.swing.JPanel();
+        signin = new javax.swing.JButton();
+        login = new javax.swing.JButton();
+        logout = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 70, -1, -1));
+
+        signin.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        signin.setText("SIGN IN");
+        signin.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                signinActionPerformed(evt);
+            }
+        });
+        getContentPane().add(signin, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 260, 140, -1));
+
+        login.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        login.setText("LOGIN");
+        login.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                loginActionPerformed(evt);
+            }
+        });
+        getContentPane().add(login, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 320, 140, -1));
+
+        logout.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        logout.setText("LOGOUT");
+        logout.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                logoutActionPerformed(evt);
+            }
+        });
+        getContentPane().add(logout, new org.netbeans.lib.awtextra.AbsoluteConstraints(620, 380, -1, -1));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0046.jpg")); // NOI18N
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void signinActionPerformed(java.awt.event.ActionEvent evt) {                                       
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            signinu ob=new signinu();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(userpg.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                      
+
+    private void loginActionPerformed(java.awt.event.ActionEvent evt) {                                      
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            loginu ob=new loginu();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(userpg.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                     
+
+    private void logoutActionPerformed(java.awt.event.ActionEvent evt) {                                       
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            index ob=new index();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(userpg.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                      
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(userpg.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(userpg.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(userpg.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(userpg.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new userpg().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JButton login;
+    private javax.swing.JButton logout;
+    private javax.swing.JButton signin;
+    // End of variables declaration                   
+}
+//signinu.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import java.sql.PreparedStatement;
+/**
+ *
+ * @author DG
+ */
+public class signinu extends javax.swing.JFrame {
+int v=0;
+    /**
+     * Creates new form signinu
+     */
+    public signinu() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jPanel1 = new javax.swing.JPanel();
+        signin = new javax.swing.JLabel();
+        name = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        user = new javax.swing.JLabel();
+        jTextField2 = new javax.swing.JTextField();
+        pass = new javax.swing.JLabel();
+        jPasswordField1 = new javax.swing.JPasswordField();
+        jLabel5 = new javax.swing.JLabel();
+        v3 = new javax.swing.JRadioButton();
+        v6 = new javax.swing.JRadioButton();
+        v12 = new javax.swing.JRadioButton();
+        sub = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+
+        signin.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        signin.setText("SIGN-IN");
+        getContentPane().add(signin, new org.netbeans.lib.awtextra.AbsoluteConstraints(430, 160, -1, -1));
+
+        name.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        name.setText("NAME");
+        getContentPane().add(name, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 210, -1, -1));
+
+        jTextField1.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 210, 140, 30));
+
+        user.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        user.setText("USERNAME");
+        getContentPane().add(user, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 250, -1, -1));
+
+        jTextField2.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        jTextField2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField2ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jTextField2, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 250, 140, 30));
+
+        pass.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        pass.setText("PASSWORD");
+        getContentPane().add(pass, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 290, -1, -1));
+
+        jPasswordField1.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        jPasswordField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jPasswordField1ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jPasswordField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 290, 140, 30));
+
+        jLabel5.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel5.setText("VALIDITY");
+        getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 330, -1, -1));
+
+        v3.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        v3.setText("3 months Rs.99");
+        v3.setToolTipText("");
+        v3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                v3ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(v3, new org.netbeans.lib.awtextra.AbsoluteConstraints(430, 370, 170, -1));
+
+        v6.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        v6.setText("6 months Rs. 170");
+        v6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                v6ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(v6, new org.netbeans.lib.awtextra.AbsoluteConstraints(430, 410, 170, 30));
+
+        v12.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        v12.setText("1 year Rs. 300");
+        getContentPane().add(v12, new org.netbeans.lib.awtextra.AbsoluteConstraints(430, 450, 170, -1));
+
+        sub.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        sub.setText("SIGN-IN");
+        sub.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                subActionPerformed(evt);
+            }
+        });
+        getContentPane().add(sub, new org.netbeans.lib.awtextra.AbsoluteConstraints(440, 500, -1, -1));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0050.jpg")); // NOI18N
+        jLabel1.setText("jLabel1");
+        jLabel1.setMinimumSize(new java.awt.Dimension(1366, 768));
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void v3ActionPerformed(java.awt.event.ActionEvent evt) {                                   
+        // TODO add your handling code here:
+    }                                  
+
+    private void v6ActionPerformed(java.awt.event.ActionEvent evt) {                                   
+        // TODO add your handling code here:
+    }                                  
+
+    private void subActionPerformed(java.awt.event.ActionEvent evt) {                                    
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            String name=jTextField1.getText();
+            String user=jTextField2.getText();
+            String pass=jPasswordField1.getText();
+            if(v3.isSelected())
+            v=3;
+            if(v6.isSelected())
+            v=6;
+            if(v12.isSelected())
+            v=12;
+            PreparedStatement query=conn.prepareStatement("insert into login(name,log_id,password,validity)values(?,?,?,adddate(curdate(),interval ? month));");
+            query.setString(1,name);
+            query.setString(2,user);
+            query.setString(3,pass);
+            query.setInt(4,v);
+            query.executeUpdate();
+            JOptionPane.showMessageDialog(this,"SIGN-IN SUCCESSFULLY");
+            loginu ob=new loginu();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(signinu.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                   
+
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {                                            
+        // TODO add your handling code here:
+    }                                           
+
+    private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {                                            
+        // TODO add your handling code here:
+    }                                           
+
+    private void jPasswordField1ActionPerformed(java.awt.event.ActionEvent evt) {                                                
+        // TODO add your handling code here:
+    }                                               
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(signinu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(signinu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(signinu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(signinu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new signinu().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPasswordField jPasswordField1;
+    private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
+    private javax.swing.JLabel name;
+    private javax.swing.JLabel pass;
+    private javax.swing.JLabel signin;
+    private javax.swing.JButton sub;
+    private javax.swing.JLabel user;
+    private javax.swing.JRadioButton v12;
+    private javax.swing.JRadioButton v3;
+    private javax.swing.JRadioButton v6;
+    // End of variables declaration                   
+}
+//loginu.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
+import java.sql.*;
+import javax.swing.JOptionPane;
+
+/**
+ *
+ * @author DG
+ */
+public class loginu extends javax.swing.JFrame {
+
+    /**
+     * Creates new form loginu
+     */
+    public loginu() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jPanel1 = new javax.swing.JPanel();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
+        user1 = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
+        pass = new javax.swing.JPasswordField();
+        jButton1 = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+
+        jLabel4.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel4.setText("LOGIN");
+        getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(910, 240, -1, -1));
+
+        jLabel2.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel2.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel2.setText("USERNAME");
+        getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 300, 160, 32));
+
+        user1.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        user1.setDoubleBuffered(true);
+        user1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                user1ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(user1, new org.netbeans.lib.awtextra.AbsoluteConstraints(990, 300, 150, 30));
+
+        jLabel3.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel3.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel3.setText("PASSWORD");
+        getContentPane().add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 360, 160, -1));
+
+        pass.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        pass.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                passActionPerformed(evt);
+            }
+        });
+        getContentPane().add(pass, new org.netbeans.lib.awtextra.AbsoluteConstraints(990, 350, 150, 30));
+
+        jButton1.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jButton1.setText("LOGIN");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(880, 410, 120, 35));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0051.jpg")); // NOI18N
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            String user=user1.getText();
+            String password=pass.getText();
+            PreparedStatement query = conn.prepareStatement("select* from login where log_id='"+user+"' and password='"+password+"'");
+            ResultSet rs = query.executeQuery();
+            PreparedStatement sql = conn.prepareStatement("Select datediff(validity,curdate()) as d from login where log_id=?");
+            sql.setString(1, user);
+            int ex=0;
+            ResultSet rs1 = sql.executeQuery();
+            while(rs1.next())
+                ex=rs1.getInt(1);
+            if(ex<=0){
+                JOptionPane.showMessageDialog(this,"VALIDITY EXPIRED");
+                PreparedStatement query1=conn.prepareStatement("delete from login where log_id=?");
+                query1.setString(1,user);
+                query1.executeUpdate();
+                JOptionPane.showMessageDialog(this,"RENEW YOUR MEMBERSHIP BY SIGNING IN");
+            }
+            if(rs.next())
+            {
+                String s="Your membership is valid for "+ ex +" more days";
+                JOptionPane.showMessageDialog(this,s);
+                dispose();
+                search ob=new search();
+                ob.setVisible(true);
+                this.setVisible(false);             
+            }
+            else{
+                JOptionPane.showMessageDialog(this,"INVALID USERNAME OR PASSWORD!");
+            }
+            conn.close();
+        } catch (SQLException ex) {
+            java.util.logging.Logger.getLogger(loginu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    private void user1ActionPerformed(java.awt.event.ActionEvent evt) {                                      
+        // TODO add your handling code here:
+    }                                     
+
+    private void passActionPerformed(java.awt.event.ActionEvent evt) {                                     
+        // TODO add your handling code here:
+    }                                    
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(loginu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(loginu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(loginu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(loginu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new loginu().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton jButton1;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPasswordField pass;
+    private javax.swing.JTextField user1;
+    // End of variables declaration                   
+}
+//search.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+
+import static book.home.jTextField1;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import java.sql.*;
+/**
+ *
+ * @author DG
+ */
+public class search extends javax.swing.JFrame {
+
+    /**
+     * Creates new form search
+     */
+    public search() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jLabel2 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTable1 = new javax.swing.JTable();
+        jButton1 = new javax.swing.JButton();
+        jLabel3 = new javax.swing.JLabel();
+        jButton2 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel2.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel2.setText("SEARCH FOR BOOKS");
+        getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 240, 260, 40));
+
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(460, 280, 330, 30));
+
+        jTable1.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "BOOK NAME", "LANGUAGE"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jTable1.setRowHeight(25);
+        jScrollPane1.setViewportView(jTable1);
+
+        getContentPane().add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(230, 410, 740, 90));
+
+        jButton1.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        jButton1.setText("SEARCH");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 360, -1, -1));
+
+        jLabel3.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        jLabel3.setText("COPY THE NAME OF THE BOOK YOU WANT TO READ");
+        getContentPane().add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(440, 320, 380, 30));
+
+        jButton2.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        jButton2.setText("SEE DETAILS");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 530, -1, -1));
+
+        jButton3.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        jButton3.setText("LOGOUT");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 580, -1, -1));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0048.jpg")); // NOI18N
+        jLabel1.setText("SEARCH");
+        jLabel1.setMinimumSize(new java.awt.Dimension(1366, 768));
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {                                            
+        // TODO add your handling code here:
+    }                                           
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            String b=jTextField1.getText();
+            PreparedStatement sql1 = conn.prepareStatement("SELECT b_name,language from book where b_name regexp ?"); 
+            sql1.setString(1,b);
+            ResultSet rs = sql1.executeQuery();
+            int k=0;
+            if(b.length()==0)
+                JOptionPane.showMessageDialog(this,"ENTER SOMETHING");
+            else{
+            while(rs.next()){
+                String bo=rs.getString("b_name");
+                String l=rs.getString("language");
+                String t1[]={bo,l};
+                DefaultTableModel tblModel=(DefaultTableModel)jTable1.getModel();
+                tblModel.addRow(t1);
+                k++;
+            }
+            if(k==0){
+                JOptionPane.showMessageDialog(this,"BOOK NOT AVAILABLE");
+                jTextField1.setText("");
+            }
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(home.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        home ob= new home();
+        ob.setVisible(true);
+        this.setVisible(false);
+    }                                        
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            index ob=new index();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(admin1.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(search.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(search.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(search.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(search.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new search().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTable jTable1;
+    private javax.swing.JTextField jTextField1;
+    // End of variables declaration                   
+}
+//home.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+
+import com.mysql.cj.xdevapi.Statement;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+
+/**
+ *
+ * @author DG
+ */
+public class home extends javax.swing.JFrame {
+
+    /**
+     * Creates new form home
+     */
+    public home() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jLabel2 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        jButton1 = new javax.swing.JButton();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
+        jLabel6 = new javax.swing.JLabel();
+        jLabel7 = new javax.swing.JLabel();
+        jLabel8 = new javax.swing.JLabel();
+        jLabel9 = new javax.swing.JLabel();
+        jLabel10 = new javax.swing.JLabel();
+        jLabel11 = new javax.swing.JLabel();
+        jTextField2 = new javax.swing.JTextField();
+        jTextField3 = new javax.swing.JTextField();
+        jTextField4 = new javax.swing.JTextField();
+        jTextField5 = new javax.swing.JTextField();
+        jTextField6 = new javax.swing.JTextField();
+        jTextField7 = new javax.swing.JTextField();
+        jTextField8 = new javax.swing.JTextField();
+        jTextField9 = new javax.swing.JTextField();
+        jButton2 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel2.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel2.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel2.setText("SEARCH FOR A BOOK");
+        getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(580, 60, -1, -1));
+
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(520, 110, 360, 40));
+
+        jButton1.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        jButton1.setText("SEARCH");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 180, -1, -1));
+
+        jLabel4.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        jLabel4.setText("ISBN");
+        getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 230, -1, -1));
+
+        jLabel5.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        jLabel5.setText("BOOK NAME");
+        getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 270, -1, -1));
+
+        jLabel6.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        jLabel6.setText("LANGUAGE");
+        getContentPane().add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 310, -1, -1));
+
+        jLabel7.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        jLabel7.setText("GENRE");
+        getContentPane().add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 350, -1, -1));
+
+        jLabel8.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        jLabel8.setText("DESCRIPTION");
+        getContentPane().add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 390, -1, -1));
+
+        jLabel9.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        jLabel9.setText("RATING");
+        getContentPane().add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 460, -1, -1));
+
+        jLabel10.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        jLabel10.setText("AUTHOR NAME");
+        getContentPane().add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 500, -1, -1));
+
+        jLabel11.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
+        jLabel11.setText("PUBLISHER NAME");
+        getContentPane().add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(530, 540, -1, -1));
+
+        jTextField2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField2ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jTextField2, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 230, 160, -1));
+        getContentPane().add(jTextField3, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 270, 160, -1));
+        getContentPane().add(jTextField4, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 310, 160, -1));
+        getContentPane().add(jTextField5, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 350, 160, -1));
+
+        jTextField6.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
+        getContentPane().add(jTextField6, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 390, 160, 50));
+        getContentPane().add(jTextField7, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 460, 160, -1));
+        getContentPane().add(jTextField8, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 500, 160, -1));
+        getContentPane().add(jTextField9, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 540, 160, -1));
+
+        jButton2.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        jButton2.setText("GIVE FEEDBACK");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(640, 590, -1, -1));
+
+        jButton3.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        jButton3.setText("LOGOUT");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 640, -1, -1));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\6lSTLF.jpg")); // NOI18N
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {                                            
+        // TODO add your handling code here:
+    }                                           
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            String b=jTextField1.getText();
+            if(b.length()>0){
+            PreparedStatement sql=conn.prepareStatement("SELECT ISBN,b_name,language,genre,description,rating,a_name,p_name from  book natural join author natural join publisher where b_name = ?");       
+            sql.setString(1, b);
+            ResultSet rs = sql.executeQuery();
+            if(rs.next()){
+                String i=String.valueOf(rs.getDouble("ISBN"));
+                String bo=rs.getString("b_name");
+                String l=rs.getString("language");
+                String g=rs.getString("genre");
+                String d=rs.getString("description");
+                String r=String.valueOf(rs.getDouble("rating"));
+                String a=rs.getString("a_name");
+                String p=rs.getString("p_name");
+                jTextField2.setText(i);
+                jTextField3.setText(bo);
+                jTextField4.setText(l);
+                jTextField5.setText(g);
+                jTextField6.setText(d);
+                jTextField7.setText(r);
+                jTextField8.setText(a);
+                jTextField9.setText(p);
+            }
+            else{
+                JOptionPane.showMessageDialog(null,"ENTER CORRECT NAME OF THE BOOK");
+                jTextField1.setText("");
+            }
+            }
+            else{
+                JOptionPane.showMessageDialog(this,"box is blank");
+            }
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(home.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {                                            
+        // TODO add your handling code here:
+    }                                           
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+        String b=jTextField3.getText();
+            feed ob=new feed();
+            ob.jTextField2.setText(b);
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(home.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{            
+            JOptionPane.showMessageDialog(this,"ENJOY YOUR FOR READING");
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            index ob=new index();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(admin1.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(home.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(home.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(home.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(home.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new home().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
+    public static javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
+    private javax.swing.JTextField jTextField3;
+    private javax.swing.JTextField jTextField4;
+    private javax.swing.JTextField jTextField5;
+    private javax.swing.JTextField jTextField6;
+    private javax.swing.JTextField jTextField7;
+    private javax.swing.JTextField jTextField8;
+    private javax.swing.JTextField jTextField9;
+    // End of variables declaration                   
+}
+//feed.java
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ */
+package book;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+
+/**
+ *
+ * @author DG
+ */
+public class feed extends javax.swing.JFrame {
+
+    /**
+     * Creates new form feed
+     */
+    public feed() {
+        initComponents();
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        jTextField2 = new javax.swing.JTextField();
+        jButton1 = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel2.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jLabel2.setText("FEEDBACK");
+        getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(870, 190, -1, -1));
+
+        jLabel3.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        jLabel3.setText("BOOK NAME");
+        getContentPane().add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 260, 120, -1));
+
+        jLabel4.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        jLabel4.setText("FEEDBACK");
+        getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 320, -1, -1));
+        getContentPane().add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(970, 310, 150, 30));
+        getContentPane().add(jTextField2, new org.netbeans.lib.awtextra.AbsoluteConstraints(970, 250, 150, 30));
+
+        jButton1.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        jButton1.setText("POST");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 370, -1, -1));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\DG\\Downloads\\IMG-20220624-WA0053.jpg")); // NOI18N
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1366, 768));
+
+        pack();
+    }// </editor-fold>                        
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        try{
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/books", "root", "Shakthii@17");
+            String b=jTextField2.getText();
+            String f=jTextField1.getText();
+            PreparedStatement query=conn.prepareStatement("insert into fb(b_name, feedback) values(?,?);");
+            query.setString(1,b);
+            query.setString(2, f);
+            JOptionPane.showMessageDialog(this,"THANKYOU FOR THE FEEDBACK");
+            search ob=new search();
+            ob.setVisible(true);
+            this.setVisible(false);
+        } catch (SQLException ex) {
+            Logger.getLogger(feed.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }                                        
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(feed.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(feed.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(feed.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(feed.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new feed().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton jButton1;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JTextField jTextField1;
+    public static javax.swing.JTextField jTextField2;
+    // End of variables declaration                   
+}
